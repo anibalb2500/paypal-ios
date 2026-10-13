@@ -136,7 +136,7 @@ public class PayPalClient: NSObject {
             urlConfig: urlConfig,
             userAction: userAction
         )
-        analyticsService?.sendEvent("paypal-payments:checkout:ssid-session:started")
+        analyticsService?.sendEvent("paypal-payments:checkout:ssid-session:started", withBackgroundProtection: true)
 
         sessionTask = Task {
             try await createShopperSessionAPI.createShopperSessionWithAppSwitchEligibility(
@@ -175,7 +175,8 @@ public class PayPalClient: NSObject {
             analyticsService?.sendEvent(
                 "paypal-payments:checkout:session-not-started",
                 errorDescription: PayPalError.sessionNotStartedError.errorDescription,
-                checkoutAnalyticsData: analyticsData
+                checkoutAnalyticsData: analyticsData,
+                withBackgroundProtection: true
             )
             endSystemLatencyTracking(presentationType: .error)
             DispatchQueue.main.async {
@@ -193,16 +194,22 @@ public class PayPalClient: NSObject {
                 let session = try await task.value
                 analyticsService?.sendEvent(
                     "paypal-payments:create-paypal-session:succeeded",
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
-                analyticsService?.sendEvent("paypal-payments:checkout:started", checkoutAnalyticsData: analyticsData)
+                analyticsService?.sendEvent(
+                    "paypal-payments:checkout:started",
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
+                )
                 launchCheckout(session: session, orderID: orderID, completion: completion)
             } catch {
                 sessionTask = nil
                 analyticsService?.sendEvent(
                     "paypal-payments:create-paypal-session:failed",
                     errorDescription: error.localizedDescription,
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 let error = PayPalError.sessionNotCreatedError
                 DispatchQueue.main.async { completion(.failure(error)) }
@@ -236,7 +243,8 @@ public class PayPalClient: NSObject {
             analyticsService?.sendEvent(
                 "paypal-payments:checkout:session-not-started",
                 errorDescription: PayPalError.sessionNotStartedError.errorDescription,
-                checkoutAnalyticsData: analyticsData
+                checkoutAnalyticsData: analyticsData,
+                withBackgroundProtection: true
             )
             endSystemLatencyTracking(presentationType: .error)
             DispatchQueue.main.async {
@@ -254,16 +262,22 @@ public class PayPalClient: NSObject {
                 let session = try await task.value
                 analyticsService?.sendEvent(
                     "paypal-payments:create-paypal-session:succeeded",
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
-                analyticsService?.sendEvent("paypal-payments:checkout:started", checkoutAnalyticsData: analyticsData)
+                analyticsService?.sendEvent(
+                    "paypal-payments:checkout:started",
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
+                )
                 launchVault(session: session, setupTokenID: setupTokenID, completion: completion)
             } catch {
                 sessionTask = nil
                 analyticsService?.sendEvent(
                     "paypal-payments:create-paypal-session:failed",
                     errorDescription: error.localizedDescription,
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 let error = PayPalError.sessionNotCreatedError
                 DispatchQueue.main.async { completion(.failure(error)) }
@@ -286,7 +300,8 @@ public class PayPalClient: NSObject {
 
         analyticsService?.sendEvent(
             "paypal-payments:checkout:handle-return:started",
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         let comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let items = comps?.queryItems ?? []
@@ -308,7 +323,8 @@ public class PayPalClient: NSObject {
         if isCancel {
             analyticsService?.sendEvent(
                 "paypal-payments:checkout:handle-return:succeeded",
-                checkoutAnalyticsData: analyticsData
+                checkoutAnalyticsData: analyticsData,
+                withBackgroundProtection: true
             )
             if let completion = vaultAppSwitchCompletion {
                 vaultAppSwitchCompletion = nil
@@ -319,7 +335,8 @@ public class PayPalClient: NSObject {
                 appSwitchCompletion = nil
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:app-switch:canceled",
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 notifyCheckoutCancelWithError(with: PayPalError.checkoutCanceledError, completion: completion)
                 return
@@ -330,7 +347,8 @@ public class PayPalClient: NSObject {
         if hasVaultSuccess, let tokenID = vaultTokenID, let sessionID = vaultSessionID {
             analyticsService?.sendEvent(
                 "paypal-payments:checkout:handle-return:succeeded",
-                checkoutAnalyticsData: analyticsData
+                checkoutAnalyticsData: analyticsData,
+                withBackgroundProtection: true
             )
             if let completion = vaultAppSwitchCompletion {
                 vaultAppSwitchCompletion = nil
@@ -343,7 +361,8 @@ public class PayPalClient: NSObject {
         if hasCheckoutSuccess, let oid = orderID, let pid = payerID {
             analyticsService?.sendEvent(
                 "paypal-payments:checkout:handle-return:succeeded",
-                checkoutAnalyticsData: analyticsData
+                checkoutAnalyticsData: analyticsData,
+                withBackgroundProtection: true
             )
             if let completion = appSwitchCompletion {
                 appSwitchCompletion = nil
@@ -356,7 +375,8 @@ public class PayPalClient: NSObject {
         analyticsService?.sendEvent(
             "paypal-payments:checkout:handle-return:failed",
             errorDescription: PayPalError.malformedResultError.errorDescription,
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         if let completion = vaultAppSwitchCompletion {
             vaultAppSwitchCompletion = nil
@@ -465,7 +485,7 @@ public class PayPalClient: NSObject {
             case .launched:
                 return
             case .fallback(let reason):
-                analyticsService?.sendEvent("paypal-payments:checkout:fallback-to-web:\(reason)")
+                analyticsService?.sendEvent("paypal-payments:checkout:fallback-to-web:\(reason)", withBackgroundProtection: true)
             }
         }
         analyticsData?.url = nil
@@ -483,7 +503,8 @@ public class PayPalClient: NSObject {
         analyticsData?.url = url
         analyticsService?.sendEvent(
             "paypal-payments:checkout:app-switch:started",
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         await MainActor.run {
             handlers.setCompletion(handlers.completionOnce)
@@ -501,7 +522,8 @@ public class PayPalClient: NSObject {
             analyticsService?.sendEvent(
                 "paypal-payments:checkout:app-switch:failed",
                 errorDescription: "cannot_open_url",
-                checkoutAnalyticsData: analyticsData
+                checkoutAnalyticsData: analyticsData,
+                withBackgroundProtection: true
             )
             await MainActor.run {
                 handlers.setCompletion(nil)
@@ -530,7 +552,8 @@ public class PayPalClient: NSObject {
     ) {
         analyticsService?.sendEvent(
             "paypal-payments:checkout:auth-challenge-presentation:started",
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         Task {
             do {
@@ -543,7 +566,8 @@ public class PayPalClient: NSObject {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:auth-challenge-presentation:failed",
                     errorDescription: sdkError.errorDescription,
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 endSystemLatencyTracking(presentationType: .error)
                 notifyCheckoutFailure(with: sdkError, completion: completion)
@@ -560,7 +584,8 @@ public class PayPalClient: NSObject {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:auth-challenge-presentation:failed",
                     errorDescription: PayPalError.payPalURLError.errorDescription,
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 endSystemLatencyTracking(presentationType: .error)
                 notifyCheckoutFailure(with: PayPalError.payPalURLError, completion: completion)
@@ -577,7 +602,7 @@ public class PayPalClient: NSObject {
                     let event = didDisplay
                         ? "paypal-payments:checkout:auth-challenge-presentation:succeeded"
                         : "paypal-payments:checkout:auth-challenge-presentation:failed"
-                    self?.analyticsService?.sendEvent(event, checkoutAnalyticsData: self?.analyticsData)
+                    self?.analyticsService?.sendEvent(event, checkoutAnalyticsData: self?.analyticsData, withBackgroundProtection: true)
                 },
                 sessionDidCancel: { [weak self] in
                     guard let self else { return }
@@ -598,7 +623,8 @@ public class PayPalClient: NSObject {
     ) {
         analyticsService?.sendEvent(
             "paypal-payments:checkout:auth-challenge-presentation:started",
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         Task {
             do {
@@ -611,7 +637,8 @@ public class PayPalClient: NSObject {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:auth-challenge-presentation:failed",
                     errorDescription: sdkError.errorDescription,
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 endSystemLatencyTracking(presentationType: .error)
                 notifyVaultFailure(with: sdkError, completion: completion)
@@ -625,7 +652,8 @@ public class PayPalClient: NSObject {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:auth-challenge-presentation:failed",
                     errorDescription: PayPalError.payPalURLError.errorDescription,
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 endSystemLatencyTracking(presentationType: .error)
                 notifyVaultFailure(with: PayPalError.payPalURLError, completion: completion)
@@ -641,7 +669,7 @@ public class PayPalClient: NSObject {
                     let event = didDisplay
                         ? "paypal-payments:checkout:auth-challenge-presentation:succeeded"
                         : "paypal-payments:checkout:auth-challenge-presentation:failed"
-                    self?.analyticsService?.sendEvent(event, checkoutAnalyticsData: self?.analyticsData)
+                    self?.analyticsService?.sendEvent(event, checkoutAnalyticsData: self?.analyticsData, withBackgroundProtection: true)
                 },
                 sessionDidCancel: { [weak self] in
                     guard let self else { return }
@@ -661,14 +689,16 @@ public class PayPalClient: NSObject {
         defer { analyticsData = nil }
         analyticsService?.sendEvent(
             "paypal-payments:checkout:handle-return:started",
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         let sdkError = PayPalError.checkoutCanceledError
         sendBrowserLoginCancelEvent(errorDescription: sdkError.errorDescription)
         analyticsService?.sendEvent(
             "paypal-payments:checkout:handle-return:succeeded",
             errorDescription: sdkError.errorDescription,
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         sessionTask = nil
         notifyCheckoutFailure(with: sdkError, completion: completion)
@@ -685,14 +715,16 @@ public class PayPalClient: NSObject {
         }
         analyticsService?.sendEvent(
             "paypal-payments:checkout:handle-return:started",
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         if let error {
             let sdkError = PayPalError.webSessionError(error)
             analyticsService?.sendEvent(
                 "paypal-payments:checkout:handle-return:failed",
                 errorDescription: sdkError.errorDescription,
-                checkoutAnalyticsData: analyticsData
+                checkoutAnalyticsData: analyticsData,
+                withBackgroundProtection: true
             )
             sessionTask = nil
             notifyCheckoutFailure(with: sdkError, completion: completion)
@@ -703,7 +735,8 @@ public class PayPalClient: NSObject {
                 opType == "cancel" {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:handle-return:succeeded",
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 sessionTask = nil
                 notifyCheckoutCancelWithError(
@@ -713,7 +746,8 @@ public class PayPalClient: NSObject {
                 let payerID = getQueryStringParameter(url: url.absoluteString, param: "PayerID") {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:handle-return:succeeded",
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 sessionTask = nil
                 let result = PayPalCheckoutResult(orderID: orderID, payerID: payerID)
@@ -722,7 +756,8 @@ public class PayPalClient: NSObject {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:handle-return:failed",
                     errorDescription: PayPalError.malformedResultError.errorDescription,
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 sessionTask = nil
                 notifyCheckoutFailure(with: PayPalError.malformedResultError, completion: completion)
@@ -736,14 +771,16 @@ public class PayPalClient: NSObject {
         defer { analyticsData = nil }
         analyticsService?.sendEvent(
             "paypal-payments:checkout:handle-return:started",
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         let sdkError = PayPalError.vaultCanceledError
         sendBrowserLoginCancelEvent(errorDescription: sdkError.errorDescription)
         analyticsService?.sendEvent(
             "paypal-payments:checkout:handle-return:succeeded",
             errorDescription: sdkError.errorDescription,
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         sessionTask = nil
         notifyVaultCancelWithError(with: sdkError, completion: completion)
@@ -760,14 +797,16 @@ public class PayPalClient: NSObject {
         }
         analyticsService?.sendEvent(
             "paypal-payments:checkout:handle-return:started",
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         if let error {
             let sdkError = PayPalError.webSessionError(error)
             analyticsService?.sendEvent(
                 "paypal-payments:checkout:handle-return:failed",
                 errorDescription: sdkError.errorDescription,
-                checkoutAnalyticsData: analyticsData
+                checkoutAnalyticsData: analyticsData,
+                withBackgroundProtection: true
             )
             sessionTask = nil
             notifyVaultFailure(with: sdkError, completion: completion)
@@ -778,7 +817,8 @@ public class PayPalClient: NSObject {
             if resultURL.path.contains("cancel") {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:handle-return:succeeded",
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 sessionTask = nil
                 notifyVaultCancelWithError(with: PayPalError.vaultCanceledError, completion: completion)
@@ -790,7 +830,8 @@ public class PayPalClient: NSObject {
                 !tokenID.isEmpty, !approvalSessionID.isEmpty {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:handle-return:succeeded",
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 sessionTask = nil
                 let vaultResult = PayPalVaultResult(tokenID: tokenID, approvalSessionID: approvalSessionID)
@@ -799,7 +840,8 @@ public class PayPalClient: NSObject {
                 analyticsService?.sendEvent(
                     "paypal-payments:checkout:handle-return:failed",
                     errorDescription: PayPalError.payPalVaultResponseError.errorDescription,
-                    checkoutAnalyticsData: analyticsData
+                    checkoutAnalyticsData: analyticsData,
+                    withBackgroundProtection: true
                 )
                 sessionTask = nil
                 notifyVaultFailure(with: PayPalError.payPalVaultResponseError, completion: completion)
@@ -922,7 +964,8 @@ public class PayPalClient: NSObject {
         analyticsService?.sendEvent(
             eventName,
             errorDescription: errorDescription,
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
     }
 
@@ -932,7 +975,11 @@ public class PayPalClient: NSObject {
         for result: PayPalCheckoutResult,
         completion: (Result<PayPalCheckoutResult, CoreSDKError>) -> Void
     ) {
-        analyticsService?.sendEvent("paypal-payments:checkout:succeeded", checkoutAnalyticsData: analyticsData)
+        analyticsService?.sendEvent(
+            "paypal-payments:checkout:succeeded",
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
+        )
         completion(.success(result))
     }
 
@@ -943,7 +990,8 @@ public class PayPalClient: NSObject {
         analyticsService?.sendEvent(
             "paypal-payments:checkout:failed",
             errorDescription: error.errorDescription,
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         completion(.failure(error))
     }
@@ -952,7 +1000,11 @@ public class PayPalClient: NSObject {
         with error: CoreSDKError,
         completion: (Result<PayPalCheckoutResult, CoreSDKError>) -> Void
     ) {
-        analyticsService?.sendEvent("paypal-payments:checkout:canceled", checkoutAnalyticsData: analyticsData)
+        analyticsService?.sendEvent(
+            "paypal-payments:checkout:canceled",
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
+        )
         completion(.failure(error))
     }
 
@@ -960,7 +1012,11 @@ public class PayPalClient: NSObject {
         for result: PayPalVaultResult,
         completion: (Result<PayPalVaultResult, CoreSDKError>) -> Void
     ) {
-        analyticsService?.sendEvent("paypal-payments:checkout:succeeded", checkoutAnalyticsData: analyticsData)
+        analyticsService?.sendEvent(
+            "paypal-payments:checkout:succeeded",
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
+        )
         completion(.success(result))
     }
 
@@ -971,7 +1027,8 @@ public class PayPalClient: NSObject {
         analyticsService?.sendEvent(
             "paypal-payments:checkout:failed",
             errorDescription: error.errorDescription,
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         completion(.failure(error))
     }
@@ -983,7 +1040,8 @@ public class PayPalClient: NSObject {
         analyticsService?.sendEvent(
             "paypal-payments:checkout:canceled",
             errorDescription: error.errorDescription,
-            checkoutAnalyticsData: analyticsData
+            checkoutAnalyticsData: analyticsData,
+            withBackgroundProtection: true
         )
         completion(.failure(error))
     }
